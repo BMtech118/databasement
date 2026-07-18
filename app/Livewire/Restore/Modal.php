@@ -202,7 +202,7 @@ class Modal extends Component
 
     protected function prefillSchemaNameAndDatabases(Snapshot $snapshot): void
     {
-        if ($this->targetServer?->database_type === DatabaseType::SQLITE) {
+        if (in_array($this->targetServer?->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)) {
             $paths = $this->targetServer->resolveDatabaseNames();
             $this->schemaName = $paths[0] ?? $snapshot->database_name;
         } else {

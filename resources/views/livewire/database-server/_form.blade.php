@@ -109,9 +109,9 @@ use App\Enums\DatabaseType;
                 @if($form->database_type)
                     @include('livewire.database-server._ssh-tunnel-config', ['form' => $form, 'isEdit' => $isEdit])
 
-                    @if($form->isSqlite())
-                        {{-- SQLite file paths now live on each backup configuration below.
-                             SQLite needs no host/port/credentials here; connection testing
+                    @if($form->isSqlite() || $form->isFilesystem())
+                        {{-- SQLite / Filesystem paths live on each backup configuration below.
+                             Neither needs host/port/credentials here; connection testing
                              reads the paths from the first backup card. --}}
                     @else
                         <!-- Client-server database connection fields -->
@@ -336,7 +336,7 @@ use App\Enums\DatabaseType;
     @endif
 
     <!-- Section 3: Backup Configurations (collection of one or more) -->
-    @if(($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird()) && $form->backups_enabled)
+    @if(($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird() or $form->isFilesystem()) && $form->backups_enabled)
         @php
             $volumes = $form->getAllVolumes();
             $schedules = $form->getBackupSchedules();
@@ -386,7 +386,7 @@ use App\Enums\DatabaseType;
     @endif
 
     <!-- Section 4: Notifications -->
-    @if($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird())
+    @if($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird() or $form->isFilesystem())
         <div class="card bg-base-100 shadow-sm border border-base-200">
             <div class="card-body p-3 sm:p-8">
                 <div class="flex items-center gap-3 mb-4">
