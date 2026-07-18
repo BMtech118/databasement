@@ -520,7 +520,7 @@ class Form extends \Livewire\Form
 
         if ($backups->isEmpty()) {
             $this->backups = [BackupForm::defaults()];
-            if ($server->database_type === DatabaseType::SQLITE) {
+            if (in_array($server->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)) {
                 $this->backups[0]['database_names'] = [''];
             }
         } else {
@@ -685,6 +685,15 @@ class Form extends \Livewire\Form
     }
 
     /**
+     * Check if current database type is a filesystem (files & folders) source.
+     * Like SQLite, it collects paths and needs no host/port/credentials.
+     */
+    public function isFilesystem(): bool
+    {
+        return $this->database_type === 'filesystem';
+    }
+
+    /**
      * Check if current database type has optional credentials (username/password not required).
      */
     public function hasOptionalCredentials(): bool
@@ -706,7 +715,7 @@ class Form extends \Livewire\Form
      */
     public function supportsDumpFlags(): bool
     {
-        return ! $this->isSqlite() && $this->database_type !== '';
+        return ! $this->isSqlite() && ! $this->isFilesystem() && $this->database_type !== '';
     }
 
     /**

@@ -8,7 +8,7 @@
 
         $sshConfig = $server->sshConfig;
         $agent = $server->agent;
-        $isSqlite = $server->database_type === DatabaseType::SQLITE;
+        $isSqlite = in_array($server->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true);
         $isPostgres = $server->database_type === DatabaseType::POSTGRESQL;
         $sslEnabled = (bool) $server->getExtraConfig('ssl_enabled', false);
         $authSource = $server->getExtraConfig('auth_source');
@@ -253,7 +253,7 @@
                                     $summaryKeep = BackupForm::retentionSummary($entry);
 
                                     $mode = $backup->database_selection_mode;
-                                    $isSqliteServer = $server->database_type === DatabaseType::SQLITE;
+                                    $isSqliteServer = in_array($server->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true);
                                     $databaseNames = is_array($backup->database_names) ? array_values(array_filter($backup->database_names)) : [];
                                     $showNamesList = ($isSqliteServer && $databaseNames !== [])
                                         || ($mode === DatabaseSelectionMode::Selected && $databaseNames !== []);

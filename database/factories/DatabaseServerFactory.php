@@ -54,6 +54,21 @@ class DatabaseServerFactory extends Factory
     }
 
     /**
+     * Configure the factory for a filesystem (files & folders) source.
+     */
+    public function filesystem(): static
+    {
+        return $this->state(fn () => [
+            'name' => fake()->company().' Files',
+            'database_type' => 'filesystem',
+            'host' => '',
+            'port' => 0,
+            'username' => '',
+            'password' => '',
+        ]);
+    }
+
+    /**
      * Configure the factory for remote SQLite (via SSH/SFTP).
      *
      * Note: Uses afterCreating() hook, so only works with create(), not make().

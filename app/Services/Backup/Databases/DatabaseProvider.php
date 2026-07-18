@@ -28,6 +28,7 @@ class DatabaseProvider
             DatabaseType::MONGODB => new MongodbDatabase,
             DatabaseType::MSSQL => new MssqlDatabase,
             DatabaseType::FIREBIRD => new FirebirdDatabase,
+            DatabaseType::FILESYSTEM => new FilesystemDatabase($this->sftpFilesystem),
         };
     }
 
@@ -69,6 +70,16 @@ class DatabaseProvider
             return $this->makeConfigured(DatabaseType::SQLITE, $config);
         }
 
+        if ($server->database_type === DatabaseType::FILESYSTEM) {
+            $config = ['filesystem_path' => $databaseName];
+
+            if ($server->sshConfig !== null) {
+                $config['ssh_config'] = $server->sshConfig;
+            }
+
+            return $this->makeConfigured(DatabaseType::FILESYSTEM, $config);
+        }
+
         return $this->makeFromConfig(
             DatabaseConnectionConfig::fromServer($server),
             $databaseName,
@@ -102,6 +113,10 @@ class DatabaseProvider
     ): DatabaseInterface {
         if ($config->databaseType === DatabaseType::SQLITE) {
             return $this->makeConfigured(DatabaseType::SQLITE, $this->sqliteConfig($databaseName, $config->sshConfig));
+        }
+
+        if ($config->databaseType === DatabaseType::FILESYSTEM) {
+            return $this->makeConfigured(DatabaseType::FILESYSTEM, $this->filesystemConfig($databaseName, $config->sshConfig));
         }
 
         $extra = $config->extraConfig ?? [];
@@ -161,6 +176,21 @@ class DatabaseProvider
     private function sqliteConfig(string $databaseName, ?array $sshConfig): array
     {
         $dbConfig = ['sqlite_path' => $databaseName];
+
+        if ($sshConfig !== null) {
+            $dbConfig['ssh_config_array'] = $sshConfig;
+        }
+
+        return $dbConfig;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $sshConfig
+     * @return array<string, mixed>
+     */
+    private function filesystemConfig(string $databaseName, ?array $sshConfig): array
+    {
+        $dbConfig = ['filesystem_path' => $databaseName];
 
         if ($sshConfig !== null) {
             $dbConfig['ssh_config_array'] = $sshConfig;

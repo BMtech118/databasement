@@ -22,7 +22,7 @@ abstract class ConnectionRules
         return match ($type) {
             DatabaseType::MYSQL => new MysqlConnectionRules,
             DatabaseType::POSTGRESQL => new PostgresConnectionRules,
-            DatabaseType::SQLITE => new SqliteConnectionRules,
+            DatabaseType::SQLITE, DatabaseType::FILESYSTEM => new SqliteConnectionRules,
             DatabaseType::REDIS => new RedisConnectionRules,
             DatabaseType::MONGODB => new MongodbConnectionRules,
             DatabaseType::MSSQL, DatabaseType::FIREBIRD, null => new ClientServerConnectionRules,

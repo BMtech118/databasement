@@ -248,7 +248,7 @@ use App\Enums\DatabaseType;
     @endif
 
     <!-- Section 3: Backup Configurations (collection of one or more) -->
-    @if(($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird()) && $form->backups_enabled)
+    @if(($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird() or $form->isFilesystem()) && $form->backups_enabled)
         @php
             $volumes = $form->getAllVolumes();
             $schedules = $form->getBackupSchedules();
@@ -294,7 +294,7 @@ use App\Enums\DatabaseType;
     @endif
 
     <!-- Section 4: Notifications -->
-    @if($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird())
+    @if($form->connectionTestSuccess or $form->hasAgent() or $isEdit or $form->isSqlite() or $form->isFirebird() or $form->isFilesystem())
         <div class="card bg-base-100 shadow-sm border border-base-200">
             <div class="card-body p-3 sm:p-8">
                 <x-form-section-header :step="$form->backups_enabled ? 4 : 3" :title="__('Notifications')" />

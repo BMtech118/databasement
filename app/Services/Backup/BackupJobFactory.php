@@ -47,7 +47,7 @@ class BackupJobFactory
         $server = $backup->databaseServer;
         $snapshots = [];
 
-        if ($server->database_type === DatabaseType::SQLITE) {
+        if (in_array($server->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)) {
             foreach ($backup->database_names ?? [] as $databasePath) {
                 $snapshots[] = $this->createSnapshot($backup, $databasePath, $method, $triggeredByUserId);
             }
