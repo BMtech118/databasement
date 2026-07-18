@@ -26,6 +26,21 @@ use App\Services\Backup\Filesystems\SftpFilesystem;
  */
 class FilesystemDatabase implements DatabaseInterface
 {
+    /**
+     * Patterns excluded from every archive unless overridden via the server's
+     * extra_config `exclude` key. These are the large, rebuildable-from-git
+     * trees that never belong in a "files the DB doesn't cover" backup.
+     *
+     * @var list<string>
+     */
+    public const DEFAULT_EXCLUDES = [
+        '.git',
+        'node_modules',
+        'vendor',
+        '.next/cache',
+        '*.log',
+    ];
+
     /** @var array<string, mixed> */
     private array $config;
 
@@ -62,21 +77,24 @@ class FilesystemDatabase implements DatabaseInterface
 
         $parent = dirname($sourcePath);
         $name = basename($sourcePath);
+        $excludeArgs = $this->buildExcludeArgs();
 
         // -C changes into the parent so the archive stores a relative path
-        // (portable, no absolute leading slash), then archives the file/dir by name.
-        // -h follows symlinks so linked assets are captured, not stored as dangling links.
+        // (portable, no absolute leading slash), then archives the file/dir by
+        // name. Symlinks are stored as links (no -h) so a whole-app-dir backup
+        // can't explode following a link to a huge or looping tree.
         return new DatabaseOperationResult(
-            command: sprintf(
-                'tar -chf %s -C %s %s',
+            command: trim(sprintf(
+                'tar %s-cf %s -C %s %s',
+                $excludeArgs === '' ? '' : $excludeArgs.' ',
                 escapeshellarg($outputPath),
                 escapeshellarg($parent),
                 escapeshellarg($name),
-            ),
+            )),
             log: new DatabaseOperationLog(
                 'Archived filesystem path',
                 'success',
-                ['path' => $sourcePath],
+                ['path' => $sourcePath, 'excludes' => $this->excludes()],
             ),
         );
     }
@@ -187,5 +205,30 @@ class FilesystemDatabase implements DatabaseInterface
     {
         return ($this->config['ssh_config'] ?? null) instanceof DatabaseServerSshConfig
             || is_array($this->config['ssh_config_array'] ?? null);
+    }
+
+    /**
+     * Exclude patterns for this backup: the server's `exclude` override if set,
+     * otherwise the sensible defaults (large, rebuildable-from-git trees).
+     *
+     * @return list<string>
+     */
+    private function excludes(): array
+    {
+        $configured = $this->config['exclude'] ?? null;
+
+        if (is_array($configured)) {
+            return array_values(array_filter(array_map('strval', $configured), fn ($p) => $p !== ''));
+        }
+
+        return self::DEFAULT_EXCLUDES;
+    }
+
+    private function buildExcludeArgs(): string
+    {
+        return implode(' ', array_map(
+            fn (string $pattern) => '--exclude='.escapeshellarg($pattern),
+            $this->excludes(),
+        ));
     }
 }
