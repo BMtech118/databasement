@@ -22,7 +22,7 @@ test('listDatabases returns the basename of the path', function () {
     expect($db->listDatabases())->toBe(['uploads']);
 });
 
-test('dump produces a tar command scoped to the parent directory', function () {
+test('dump produces a tar command scoped to the parent directory with default excludes', function () {
     $db = new FilesystemDatabase;
     $db->setConfig(['filesystem_path' => $this->dir]);
 
@@ -30,11 +30,25 @@ test('dump produces a tar command scoped to the parent directory', function () {
 
     $parent = dirname($this->dir);
     $name = basename($this->dir);
+    $excludes = implode(' ', array_map(
+        fn ($p) => '--exclude='.escapeshellarg($p),
+        FilesystemDatabase::DEFAULT_EXCLUDES,
+    ));
 
     expect($result)->toBeInstanceOf(DatabaseOperationResult::class)
         ->and($result->command)->toBe(
-            sprintf('tar -chf %s -C %s %s', escapeshellarg('/tmp/out.tar'), escapeshellarg($parent), escapeshellarg($name))
+            sprintf('tar %s -cf %s -C %s %s', $excludes, escapeshellarg('/tmp/out.tar'), escapeshellarg($parent), escapeshellarg($name))
         );
+});
+
+test('dump honours a custom exclude override from extra_config', function () {
+    $db = new FilesystemDatabase;
+    $db->setConfig(['filesystem_path' => $this->dir, 'exclude' => ['cache', '*.tmp']]);
+
+    $result = $db->dump('/tmp/out.tar');
+
+    expect($result->command)->toContain("--exclude='cache' --exclude='*.tmp' -cf")
+        ->and($result->command)->not->toContain('node_modules');
 });
 
 test('dump throws when the source path does not exist', function () {

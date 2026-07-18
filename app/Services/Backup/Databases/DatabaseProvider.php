@@ -77,6 +77,10 @@ class DatabaseProvider
                 $config['ssh_config'] = $server->sshConfig;
             }
 
+            if (isset($server->extra_config['exclude'])) {
+                $config['exclude'] = $server->extra_config['exclude'];
+            }
+
             return $this->makeConfigured(DatabaseType::FILESYSTEM, $config);
         }
 
@@ -116,7 +120,7 @@ class DatabaseProvider
         }
 
         if ($config->databaseType === DatabaseType::FILESYSTEM) {
-            return $this->makeConfigured(DatabaseType::FILESYSTEM, $this->filesystemConfig($databaseName, $config->sshConfig));
+            return $this->makeConfigured(DatabaseType::FILESYSTEM, $this->filesystemConfig($databaseName, $config->sshConfig, $config->extraConfig['exclude'] ?? null));
         }
 
         $extra = $config->extraConfig ?? [];
@@ -188,12 +192,21 @@ class DatabaseProvider
      * @param  array<string, mixed>|null  $sshConfig
      * @return array<string, mixed>
      */
-    private function filesystemConfig(string $databaseName, ?array $sshConfig): array
+    /**
+     * @param  array<string, mixed>|null  $sshConfig
+     * @param  list<string>|null  $exclude
+     * @return array<string, mixed>
+     */
+    private function filesystemConfig(string $databaseName, ?array $sshConfig, ?array $exclude = null): array
     {
         $dbConfig = ['filesystem_path' => $databaseName];
 
         if ($sshConfig !== null) {
             $dbConfig['ssh_config_array'] = $sshConfig;
+        }
+
+        if ($exclude !== null) {
+            $dbConfig['exclude'] = $exclude;
         }
 
         return $dbConfig;
@@ -267,6 +280,14 @@ class DatabaseProvider
             return $database->testConnection();
         }
 
+        if ($server->database_type === DatabaseType::FILESYSTEM) {
+            $database = $this->makeConfigured(DatabaseType::FILESYSTEM, [
+                'filesystem_paths' => $server->resolveDatabaseNames(),
+            ]);
+
+            return $database->testConnection();
+        }
+
         if ($server->requiresSshTunnel()) {
             $sshResult = $this->sshTunnelService->testConnection($server->sshConfig);
             if (! $sshResult['success']) {
@@ -302,7 +323,7 @@ class DatabaseProvider
         // SQLite identifies databases by configured file path. Connecting just
         // to read back a basename loses the path; return the configured paths
         // directly so callers (restore autocomplete, agent discovery) see them.
-        if ($server->database_type === DatabaseType::SQLITE) {
+        if (in_array($server->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)) {
             return $server->resolveDatabaseNames();
         }
 
