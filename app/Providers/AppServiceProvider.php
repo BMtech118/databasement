@@ -126,6 +126,10 @@ class AppServiceProvider extends ServiceProvider
         $this->registerBouncer();
         $this->configureApiRateLimiting();
 
+        \Illuminate\Support\Facades\Mail::extend('smtp2go', fn (array $config) => new \App\Mail\Transport\Smtp2goApiTransport(
+            (string) ($config['key'] ?? config('services.smtp2go.key') ?? ''),
+        ));
+
         // Mary UI 2.9's <x-tab> references <x-mary-badge> internally, but its
         // service provider only registers the `mary-` internal alias for a fixed
         // subset of components (button/icon/modal/…) and omits badge. Because

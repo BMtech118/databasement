@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'smtp2go' => [
+        'key' => env('SMTP2GO_API_KEY'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
