@@ -25,7 +25,7 @@ readonly class DatabaseConnectionConfig
 
     public function requiresSshTunnel(): bool
     {
-        return $this->databaseType !== DatabaseType::SQLITE
+        return ! in_array($this->databaseType, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)
             && $this->sshConfig !== null;
     }
 

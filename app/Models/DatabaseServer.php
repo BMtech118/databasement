@@ -183,7 +183,7 @@ class DatabaseServer extends Model
      */
     public function requiresSshTunnel(): bool
     {
-        return $this->database_type !== DatabaseType::SQLITE
+        return ! in_array($this->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)
             && $this->ssh_config_id !== null;
     }
 
@@ -258,7 +258,7 @@ class DatabaseServer extends Model
      */
     public function getConnectionLabel(): string
     {
-        if ($this->database_type === DatabaseType::SQLITE) {
+        if (in_array($this->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)) {
             return implode(', ', array_map('basename', $this->resolveDatabaseNames()));
         }
 
@@ -270,7 +270,7 @@ class DatabaseServer extends Model
      */
     public function getConnectionDetails(): string
     {
-        if ($this->database_type === DatabaseType::SQLITE) {
+        if (in_array($this->database_type, [DatabaseType::SQLITE, DatabaseType::FILESYSTEM], true)) {
             return implode(', ', $this->resolveDatabaseNames());
         }
 

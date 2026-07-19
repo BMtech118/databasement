@@ -82,9 +82,9 @@ class SaveDatabaseServerRequest extends FormRequest
             $rules['backups.*.gfs_keep_weekly'] = 'nullable|integer|min:0|max:52';
             $rules['backups.*.gfs_keep_monthly'] = 'nullable|integer|min:0|max:24';
 
-            if ($type === 'sqlite') {
+            if (in_array($type, ['sqlite', 'filesystem'])) {
                 $rules['backups.*.database_names'] = 'required|array|min:1';
-                $rules['backups.*.database_names.*'] = 'required|string|max:1000';
+                $rules['backups.*.database_names.*'] = 'required|string|max:4096';
             } elseif (in_array($type, ['mysql', 'postgres', 'mongodb'])) {
                 $rules['backups.*.database_selection_mode'] = ['required', 'string', Rule::in(array_map(fn (DatabaseSelectionMode $m) => $m->value, DatabaseSelectionMode::cases()))];
                 $rules['backups.*.database_names'] = 'nullable|array';

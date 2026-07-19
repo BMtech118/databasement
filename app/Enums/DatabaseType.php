@@ -13,6 +13,7 @@ enum DatabaseType: string
     case MONGODB = 'mongodb';
     case MSSQL = 'mssql';
     case FIREBIRD = 'firebird';
+    case FILESYSTEM = 'filesystem';
 
     public function label(): string
     {
@@ -24,6 +25,7 @@ enum DatabaseType: string
             self::MONGODB => 'MongoDB',
             self::MSSQL => 'Microsoft SQL Server',
             self::FIREBIRD => 'Firebird',
+            self::FILESYSTEM => 'Filesystem (files & folders)',
         };
     }
 
@@ -37,6 +39,7 @@ enum DatabaseType: string
             self::MONGODB => 'devicon.mongodb',
             self::MSSQL => 'devicon.microsoftsqlserver',
             self::FIREBIRD => 'devicon.firebird',
+            self::FILESYSTEM => 'o-folder-open',
         };
     }
 
@@ -53,7 +56,7 @@ enum DatabaseType: string
     public function identifiesDatabasesByPath(): bool
     {
         return match ($this) {
-            self::SQLITE, self::FIREBIRD => true,
+            self::SQLITE, self::FIREBIRD, self::FILESYSTEM => true,
             default => false,
         };
     }
@@ -68,6 +71,7 @@ enum DatabaseType: string
             self::MONGODB => 27017,
             self::MSSQL => 1433,
             self::FIREBIRD => 3050,
+            self::FILESYSTEM => 0,
         };
     }
 
@@ -97,6 +101,7 @@ enum DatabaseType: string
                 $database ?? 'postgres'
             ),
             self::SQLITE => "sqlite:{$host}",
+            self::FILESYSTEM => throw new \RuntimeException('Filesystem backups do not support PDO connections'),
             self::REDIS => throw new \RuntimeException('Redis does not support PDO connections'),
             self::MONGODB => throw new \RuntimeException('MongoDB does not support PDO connections'),
             self::MSSQL => $database
@@ -115,7 +120,7 @@ enum DatabaseType: string
      */
     public function createPdo(DatabaseServer $server, ?string $database = null, int $timeout = 30): \PDO
     {
-        if (in_array($this, [self::REDIS, self::MONGODB, self::FIREBIRD], true)) {
+        if (in_array($this, [self::REDIS, self::MONGODB, self::FIREBIRD, self::FILESYSTEM], true)) {
             throw new \RuntimeException("{$this->label()} does not support PDO connections");
         }
 
@@ -162,6 +167,7 @@ enum DatabaseType: string
     {
         return match ($this) {
             self::SQLITE => ['required', 'string', 'max:255'],
+            self::FILESYSTEM => ['required', 'string', 'max:4096'],
             self::FIREBIRD => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9_\/\\\\.\-: ]+$/'],
             default => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_]+$/'],
         };
@@ -177,6 +183,9 @@ enum DatabaseType: string
         return match ($this) {
             self::SQLITE => [
                 "{$field}.required" => __('Please enter a database path.'),
+            ],
+            self::FILESYSTEM => [
+                "{$field}.required" => __('Please enter a file or folder path.'),
             ],
             self::FIREBIRD => [
                 "{$field}.required" => __('Please enter a database name or path.'),
@@ -206,6 +215,7 @@ enum DatabaseType: string
             self::MONGODB => 'archive',
             self::MSSQL => 'dacpac',
             self::FIREBIRD => 'fbk',
+            self::FILESYSTEM => 'tar',
             default => 'sql',
         };
     }
