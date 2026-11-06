@@ -88,6 +88,10 @@ class Awss3Filesystem implements FilesystemInterface
         $clientConfig = [
             'version' => 'latest',
             'region' => $config['region'] ?? 'us-east-1',
+            // Wasabi answers bursts of 503 ServiceUnavailable on multipart
+            // parts; the SDK default (3 quick tries) gave up and failed the
+            // nightly Control Centre and /opt backups. Back off and try longer.
+            'retries' => ['mode' => 'adaptive', 'max_attempts' => 10],
         ];
 
         // Use IAM role assumption if role_arn is configured

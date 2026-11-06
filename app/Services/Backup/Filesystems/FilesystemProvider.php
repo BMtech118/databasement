@@ -11,6 +11,11 @@ use League\Flysystem\Filesystem;
 
 class FilesystemProvider
 {
+    private const WRITE_ATTEMPTS = 3;
+
+    /** Seconds before the first retry (doubles each time); tests set 0. */
+    public static int $writeRetrySeconds = 30;
+
     /** @var FilesystemInterface[] */
     private array $filesystems = [];
 
@@ -127,7 +132,21 @@ class FilesystemProvider
         }
 
         try {
-            $filesystem->writeStream($destination, $stream);
+            // A remote store can refuse a write for a moment (Wasabi 503s on
+            // multipart parts). Retry the whole upload from the start of the
+            // file before failing the backup.
+            $attempt = 0;
+            while (true) {
+                try {
+                    $filesystem->writeStream($destination, $stream);
+                    break;
+                } catch (\League\Flysystem\UnableToWriteFile $e) {
+                    if (++$attempt >= self::WRITE_ATTEMPTS || ! rewind($stream)) {
+                        throw $e;
+                    }
+                    sleep(self::$writeRetrySeconds * $attempt);
+                }
+            }
         } finally {
             if (is_resource($stream)) {
                 fclose($stream);
