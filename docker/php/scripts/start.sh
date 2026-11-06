@@ -5,6 +5,14 @@
 set -e
 
 if [ "$(id -u)" = "0" ]; then
+    # BMT: an agent configured to run as root (PUID=0) starts directly. Remapping
+    # the application user to UID 0 with usermod gains nothing and is flagged by
+    # EDR (Huntress) as a root backdoor account on every container start.
+    if [ -n "${DATABASEMENT_URL:-}" ] && [ "${PUID:-}" = "0" ]; then
+        echo "Agent mode (root)"
+        exec php artisan agent:run
+    fi
+
     USERHOME=$(grep application /etc/passwd | cut -d ":" -f6)
 
     echo "Setting up user application with PUID=${PUID} PGID=${PGID}..."
