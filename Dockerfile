@@ -32,6 +32,9 @@ ENV APP_VERSION="${APP_VERSION}"
 
 COPY --from=backend-build /app /app
 COPY --from=frontend-build /app/public/build /app/public/build
+# BMT: our start.sh over the upstream base image's copy (root agents skip the
+# usermod to UID 0 that Huntress flags as a backdoor account).
+COPY --chmod=0755 docker/php/scripts/start.sh /usr/local/bin/start.sh
 
 RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
 RUN cp /usr/local/etc/php/php-custom-production.ini /usr/local/etc/php/conf.d/zz-php-custom-production.ini
