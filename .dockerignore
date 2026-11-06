@@ -21,4 +21,5 @@ yarn-error.log
 /data
 /transmission
 docker
+!docker/php/scripts/start.sh
 Dockerfile
